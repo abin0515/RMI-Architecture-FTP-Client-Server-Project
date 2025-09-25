@@ -5,6 +5,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -134,6 +135,18 @@ public class Server extends UnicastRemoteObject implements IServer {
 					/*
 					 * TODO: Complete this thread (remember to flush output!).
 					 */
+					// Get output stream to send data to client
+					OutputStream out = socket.getOutputStream();
+					
+					// Read from input file and write to client
+					byte[] buffer = new byte[4096];
+					int bytesRead;
+					while ((bytesRead = in.read(buffer)) != -1) {
+						out.write(buffer, 0, bytesRead);
+					}
+					
+					// Flush and close the output stream
+					out.flush();
 
 					
 					/*
@@ -166,6 +179,18 @@ public class Server extends UnicastRemoteObject implements IServer {
 					/*
 					 * TODO: Complete this thread.
 					 */
+					// Get input stream to receive data from client
+					InputStream in = socket.getInputStream();
+					
+					// Read data from client and write to output file
+					byte[] buffer = new byte[4096];
+					int bytesRead;
+					while ((bytesRead = in.read(buffer)) != -1) {
+						out.write(buffer, 0, bytesRead);
+					}
+					
+					// Flush and close the output stream
+					out.flush();
 				} finally {
 					socket.close();
 				}
@@ -189,6 +214,18 @@ public class Server extends UnicastRemoteObject implements IServer {
 				/*
 				 * TODO: connect to client socket to transfer file.
 				 */
+				// Get output stream to send data to client
+				OutputStream out = socket.getOutputStream();
+				
+				// Read from input file and write to client
+				byte[] buffer = new byte[4096];
+				int bytesRead;
+				while ((bytesRead = in.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+				}
+				
+				// Flush the output stream
+				out.flush();
 
 				/*
 				 * End TODO.
@@ -214,6 +251,9 @@ public class Server extends UnicastRemoteObject implements IServer {
 			/*
 			 * TODO
 			 */
+			// Create output file and start thread to receive data
+			OutputStream out = new FileOutputStream(path() + file);
+			new Thread(new PutThread(dataChan, out)).start();
 		}
 	}
 

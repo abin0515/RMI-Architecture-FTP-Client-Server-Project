@@ -6,10 +6,12 @@
 package edu.stevens.cs549.ftpclient;
 
 import edu.stevens.cs549.ftpinterface.IServer;
+import edu.stevens.cs549.ftpinterface.IServerFactory;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -134,8 +136,14 @@ public class Client {
 			/*
 			 * TODO: Get a server proxy.
 			 */
-
-			IServer server = null;
+			// Get the RMI registry from the server
+			Registry registry = LocateRegistry.getRegistry(serverAddr, serverPort);
+			
+			// Look up the server factory in the registry
+			IServerFactory serverFactory = (IServerFactory) registry.lookup(serverName);
+			
+			// Create a server instance through the factory
+			IServer server = serverFactory.createServer();
 
 
 			/*
@@ -313,6 +321,19 @@ public class Client {
 						/*
 						 * TODO: Complete this thread.
 						 */
+						// Get input stream from server socket
+						InputStream in = socket.getInputStream();
+						
+						// Read data from server and write to local file
+						byte[] buffer = new byte[4096];
+						int bytesRead;
+						while ((bytesRead = in.read(buffer)) != -1) {
+							out.write(buffer, 0, bytesRead);
+						}
+						
+						// Flush and close the output stream
+						out.flush();
+						out.close();
 					} finally {
 						socket.close();
 					}
@@ -376,7 +397,15 @@ public class Client {
 							/*
 							 * TODO: download the file through the socket connection
 							 */
-
+							// Get input stream from server socket
+							InputStream in = socket.getInputStream();
+							
+							// Read data from server and write to local file
+							byte[] buffer = new byte[4096];
+							int bytesRead;
+							while ((bytesRead = in.read(buffer)) != -1) {
+								out.write(buffer, 0, bytesRead);
+							}
 
 							/*
 							 * End TODO
@@ -414,6 +443,37 @@ public class Client {
 						/*
 						 * TODO
 						 */
+						// Check if local file exists
+						File localFile = new File(inputs[1]);
+						if (!localFile.exists()) {
+							msgln("PUT: Local file not found: " + inputs[1]);
+							return;
+						}
+						
+						// Get server ready for transfer
+						svr.put(inputs[1]);
+						
+						// Open the local input file and connect to server socket
+						InputStream in = new FileInputStream(inputs[1]);
+						log.info("Client connecting to server at address " + serverAddress);
+						Socket socket = new Socket(serverAddress, serverSocket.getPort());
+						try {
+							// Get output stream to send data to server
+							OutputStream out = socket.getOutputStream();
+							
+							// Read from local file and write to server
+							byte[] buffer = new byte[4096];
+							int bytesRead;
+							while ((bytesRead = in.read(buffer)) != -1) {
+								out.write(buffer, 0, bytesRead);
+							}
+							
+							// Flush the output stream
+							out.flush();
+						} finally {
+							in.close();
+							socket.close();
+						}
 
 					} else if (mode == Mode.ACTIVE) {
 						/*
