@@ -368,6 +368,18 @@ public class Client {
 						/*
 						 * TODO: Complete this thread.
 						 */
+						// Get output stream to send data to server
+						OutputStream out = socket.getOutputStream();
+						
+						// Read from local file and write to server
+						byte[] buffer = new byte[4096];
+						int bytesRead;
+						while ((bytesRead = in.read(buffer)) != -1) {
+							out.write(buffer, 0, bytesRead);
+						}
+						
+						// Flush the output stream
+						out.flush();
 						
 					} finally {
 						socket.close();
@@ -479,6 +491,19 @@ public class Client {
 						/*
 						 * TODO
 						 */
+						// Check if local file exists
+						File localFile = new File(inputs[1]);
+						if (!localFile.exists()) {
+							msgln("PUT: Local file not found: " + inputs[1]);
+							return;
+						}
+						
+						// Open the local input file and get the client ready for the transfer
+						InputStream in = new FileInputStream(inputs[1]);
+						new Thread(new PutThread(dataChan, in)).start();
+						
+						// Start the transfer on the server
+						svr.put(inputs[1]);
 					} else {
 						msgln("GET: No mode set--use port or pasv command.");
 					}

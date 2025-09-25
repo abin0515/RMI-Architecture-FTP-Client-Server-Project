@@ -247,6 +247,27 @@ public class Server extends UnicastRemoteObject implements IServer {
 			/*
 			 * TODO
 			 */
+			// Create output file and connect to client socket to start uploading
+			OutputStream out = new FileOutputStream(path() + file);
+			log.info("Server connecting to client at address " + clientSocket.getHostName() + " and port " + clientSocket.getPort());
+			Socket socket = new Socket(clientSocket.getHostName(), clientSocket.getPort());
+			try {
+				// Get input stream to receive data from client
+				InputStream in = socket.getInputStream();
+				
+				// Read data from client and write to output file
+				byte[] buffer = new byte[4096];
+				int bytesRead;
+				while ((bytesRead = in.read(buffer)) != -1) {
+					out.write(buffer, 0, bytesRead);
+				}
+				
+				// Flush and close the output stream
+				out.flush();
+			} finally {
+				out.close();
+				socket.close();
+			}
 		} else if (mode == Mode.PASSIVE) {
 			/*
 			 * TODO
